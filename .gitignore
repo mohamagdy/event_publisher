@@ -9,3 +9,6 @@ spec/dummy/.sass-cache
 # RVM
 .rvmrc
 .DS_Store
+
+# Database config
+spec/dummy/config/database.yml
