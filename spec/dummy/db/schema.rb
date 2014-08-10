@@ -11,7 +11,12 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140810141012) do
+ActiveRecord::Schema.define(:version => 20140810144524) do
+
+  create_table "event_publisher_anonymous_users", :force => true do |t|
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
 
   create_table "event_publisher_event_trackings", :force => true do |t|
     t.integer  "trackable_id"
