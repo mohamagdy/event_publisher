@@ -1,7 +1,5 @@
 Rails.application.routes.draw do
-
-  resources :articles
-
+  resources :articles, only: [:index, :show]
 
   devise_for :users
 
