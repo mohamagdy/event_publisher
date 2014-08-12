@@ -19,6 +19,13 @@ require 'rails_helper'
 # that an instance is receiving a specific message.
 
 RSpec.describe ArticlesController, :type => :controller do
+  shared_examples "event publisher cookies" do |action, params|
+    it "should save the cookies of the current logged in user" do
+      get action, params
+      expect(cookies.signed[:event_publisher_user_id]).to_not be_nil
+    end
+  end
+
   context "signed in user" do
     include Devise::TestHelpers
 
@@ -27,21 +34,54 @@ RSpec.describe ArticlesController, :type => :controller do
       sign_in create(:user)
     end
 
-    describe "Non authenticated action" do
+    describe "non authenticated action" do
       it "tracks the user event for listing articles" do
         expect{
           get :index, {}
         }.to change{ EventPublisher::EventTracking.count }.by(1)
       end
+
+      it_behaves_like "event publisher cookies", :index
     end
 
-    describe "Authenticated action" do
+    describe "authenticated action" do
       it "tracks the user event for showing an article" do
         article = create(:article)
         expect{
           get :show, { id: article.to_param }
         }.to change{ EventPublisher::EventTracking.count }.by(1)
       end
+
+      it_behaves_like "event publisher cookies", :show, { id: FactoryGirl.create(:article).to_param }
+    end
+  end
+
+  context "non logged in user" do
+    describe "non authenticated action" do
+      it "should track the events for non logged in user without cookies saved before" do
+        expect{
+          get :index, {}
+        }.to change{ EventPublisher::EventTracking.count }.by(1)
+      end
+
+      it "should track the events for non logged in user with cookies saved before" do
+        anonymous_user = create(:event_publisher_anonymous_user)
+        cookies.signed[:event_publisher_user_id] = anonymous_user.id
+
+        # There should be only 1 anonymous user saved in the database
+        expect(EventPublisher::AnonymousUser.count).to eq(1)
+        expect(anonymous_user.event_trackings.count).to eq(0)
+
+        expect{
+          get :index, {}
+        }.to change{ EventPublisher::EventTracking.count }.by(1)
+
+        # No new anonymous user will be created
+        expect(EventPublisher::AnonymousUser.count).to eq(1)
+        expect(anonymous_user.event_trackings.count).to eq(1)
+      end
+
+      it_behaves_like "event publisher cookies", :index
     end
   end
 end
