@@ -19,10 +19,11 @@ require 'rails_helper'
 # that an instance is receiving a specific message.
 
 RSpec.describe ArticlesController, :type => :controller do
-  shared_examples "event publisher cookies" do |action, params|
+  shared_examples "setting event publisher cookies" do |action, params|
     it "should save the cookies of the current logged in user" do
       get action, params
       expect(cookies.signed[:event_publisher_user_id]).to_not be_nil
+      expect(cookies.signed[:event_publisher_user_type]).to_not be_nil
     end
   end
 
@@ -41,7 +42,7 @@ RSpec.describe ArticlesController, :type => :controller do
         }.to change{ EventPublisher::EventTracking.count }.by(1)
       end
 
-      it_behaves_like "event publisher cookies", :index
+      it_behaves_like "setting event publisher cookies", :index
     end
 
     describe "authenticated action" do
@@ -52,7 +53,7 @@ RSpec.describe ArticlesController, :type => :controller do
         }.to change{ EventPublisher::EventTracking.count }.by(1)
       end
 
-      it_behaves_like "event publisher cookies", :show, { id: FactoryGirl.create(:article).to_param }
+      it_behaves_like "setting event publisher cookies", :show, { id: FactoryGirl.create(:article).to_param }
     end
   end
 
@@ -81,7 +82,32 @@ RSpec.describe ArticlesController, :type => :controller do
         expect(anonymous_user.event_trackings.count).to eq(1)
       end
 
-      it_behaves_like "event publisher cookies", :index
+      it_behaves_like "setting event publisher cookies", :index
+    end
+  end
+
+  context "first time to login user" do
+    it "should save all the events user did before logging in" do
+      number_of_events = 5
+      anonymous_user = create(:event_publisher_anonymous_user)
+      events = create_list(
+        :event_publisher_event_tracking,
+        number_of_events,
+        trackable: anonymous_user
+      )
+
+      cookies.signed[:event_publisher_user_id] = anonymous_user.id
+      cookies.signed[:event_publisher_user_type] = anonymous_user.class.name
+
+      expect(anonymous_user.event_trackings.count).to eq(number_of_events)
+
+      # Logging in
+      user = create(:user)
+
+      controller.after_sign_in_path_for(user)
+
+      expect(user.event_trackings.count).to eq(number_of_events)
+      expect(anonymous_user.reload.event_trackings.count).to eq(0)
     end
   end
 end
