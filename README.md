@@ -2,13 +2,8 @@
 
 ## Installation
 
-`gem install event_publisher`
-
-Or add the gem to the Gemfile
-
-`gem 'event_publisher'`
-
-
+1. Either run `gem install event_publisher` or add the gem to the Gemfile `gem 'event_publisher'` then run the bundle command.
+2. Install the gem's migrations using the command `rake event_publisher:install:migrations`
 
 ## Usage
 
