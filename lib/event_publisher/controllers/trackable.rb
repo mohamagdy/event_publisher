@@ -1,7 +1,7 @@
 module EventPublisher
   module Trackable
     def track_event(user, event)
-      user ||= current_anonymous_user
+      user ||= current_event_publisher_user || current_anonymous_user
 
       set_cookies_for(user)
 
@@ -22,16 +22,23 @@ module EventPublisher
     end
 
     def migrate_events_after_login(user)
-      klass = cookies.signed[:event_publisher_user_type]
-      user_id = cookies.signed[:event_publisher_user_id]
-
-      previously_logged_in = klass.constantize.find_by_id(user_id)
+      previously_logged_in = self.current_event_publisher_user
 
       # Moving the events of the previosuly logged in user to the current user
-      previously_logged_in.event_trackings.update_all(trackable_type: user.class.name, trackable_id: user.id)
+      previously_logged_in.event_trackings.update_all(
+        trackable_type: user.class.name,
+        trackable_id: user.id
+      )
 
       # Setting/overriding the cookies for the current user
       set_cookies_for(user)
+    end
+
+    def current_event_publisher_user
+      klass = cookies.signed[:event_publisher_user_type]
+      user_id = cookies.signed[:event_publisher_user_id]
+
+      klass.constantize.find_by_id(user_id) if klass.present?
     end
   end
 end

@@ -29,10 +29,11 @@ RSpec.describe ArticlesController, :type => :controller do
 
   context "signed in user" do
     include Devise::TestHelpers
+    let(:user) { create(:user) }
 
     before(:each) do
       @request.env["devise.mapping"] = :user
-      sign_in create(:user)
+      sign_in user
     end
 
     describe "non authenticated action" do
@@ -54,6 +55,41 @@ RSpec.describe ArticlesController, :type => :controller do
       end
 
       it_behaves_like "setting event publisher cookies", :show, { id: FactoryGirl.create(:article).to_param }
+    end
+
+    describe "tracking events after logging out" do
+      it "should track user's events after logging out" do
+        expect{
+          get :index, {}
+        }.to change{ user.event_trackings.count }.by(1)
+
+        # Signing out the logged in user
+        sign_out(user)
+
+        expect{
+          get :index, {}
+        }.to change{ user.event_trackings.count }.by(1)
+      end
+
+      it "should not track events if cookies are deleted" do
+        expect{
+          get :index, {}
+        }.to change{ user.event_trackings.count }.by(1)
+
+        sign_out(user)
+
+        # Removing the cookies
+        cookies.delete(:event_publisher_user_id)
+        cookies.delete(:event_publisher_user_type)
+
+        expect{
+          get :index, {}
+        }.to change{ EventPublisher::EventTracking.count }.by(1)
+
+        expect{
+          get :index, {}
+        }.to change{ user.event_trackings.count }.by(0)
+      end
     end
   end
 
