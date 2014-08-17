@@ -118,6 +118,19 @@ RSpec.describe ArticlesController, :type => :controller do
         expect(anonymous_user.event_trackings.count).to eq(1)
       end
 
+      it "should log events for multiple non logged in users" do
+        expect{
+          get :index, {}
+        }.to change{ EventPublisher::AnonymousUser.count }.by(1)
+
+        cookies.delete(:event_publisher_user_id)
+        cookies.delete(:event_publisher_user_type)
+
+        expect{
+          get :index, {}
+        }.to change{ EventPublisher::AnonymousUser.count }.by(1)
+      end
+
       it_behaves_like "setting event publisher cookies", :index
     end
   end
