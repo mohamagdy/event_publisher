@@ -1,6 +1,6 @@
-== EventPublisher
+# EventPublisher
 
-=== Installation
+## Installation
 
 `gem install event_publisher`
 
@@ -10,9 +10,9 @@ Or add the gem to the Gemfile
 
 
 
-=== Usage
+## Usage
 
-==== Models
+### Models
 The trackable (user) model should look like something like this
 
 ```rb
@@ -25,9 +25,9 @@ Where `trackable` adds the following:
 1. `has_many` relation between `users` and `event_publisher_events_trackings` table
 2. An instance method called `track_event(event)` that can be called on the user object and track event.
 
-==== Controllers
+### Controllers
 
-===== Tracking events
+#### Tracking events
 To track events in controllers, you can use the following like in any action
 
 ```rb
